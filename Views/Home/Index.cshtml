@@ -1,0 +1,103 @@
+@model List<UrlShortener.Models.ShortUrl>
+@{
+    ViewData["Title"] = "Shorten a URL";
+    var baseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var newCode = TempData["NewCode"] as string;
+}
+
+<div class="hero text-center">
+    <h1 class="display-5 fw-bold">🔗 ShortLink</h1>
+    <p class="lead text-secondary mb-0">Shorten links, then track every click.</p>
+</div>
+
+@if (TempData["Error"] is string err)
+{
+    <div class="alert alert-danger">@err</div>
+}
+
+@if (!string.IsNullOrEmpty(newCode))
+{
+    var shortUrl = $"{baseUrl}/r/{newCode}";
+    <div class="alert alert-success d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <span>Created: <a href="@shortUrl" class="fw-semibold">@shortUrl</a></span>
+        <button class="btn btn-sm btn-success" onclick="copyText('@shortUrl', this)">Copy</button>
+    </div>
+}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form asp-action="Create" method="post" class="row g-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <div class="col-12 col-md-7">
+                <label class="form-label">Long URL</label>
+                <input name="originalUrl" type="url" class="form-control form-control-lg"
+                       placeholder="https://example.com/very/long/link" required />
+            </div>
+            <div class="col-8 col-md-3">
+                <label class="form-label">Custom alias <span class="text-secondary">(optional)</span></label>
+                <input name="customAlias" type="text" class="form-control form-control-lg" placeholder="my-link" />
+            </div>
+            <div class="col-4 col-md-2 d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Shorten</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Your links <span class="badge bg-secondary">@Model.Count</span></h2>
+
+@if (Model.Count == 0)
+{
+    <p class="text-secondary">No links yet — create your first one above.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Short link</th>
+                    <th>Original URL</th>
+                    <th class="text-center">Clicks</th>
+                    <th>Created</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    var shortUrl = $"{baseUrl}/r/{u.Code}";
+                    <tr>
+                        <td><a href="@shortUrl" class="fw-semibold text-decoration-none">/r/@u.Code</a></td>
+                        <td class="text-truncate" style="max-width: 320px;">
+                            <a href="@u.OriginalUrl" class="text-secondary" target="_blank" rel="noopener">@u.OriginalUrl</a>
+                        </td>
+                        <td class="text-center"><span class="badge bg-info-subtle text-info-emphasis">@u.Clicks.Count</span></td>
+                        <td class="text-secondary small">@u.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td class="text-end text-nowrap">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyText('@shortUrl', this)">Copy</button>
+                            <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Stats</a>
+                            <form asp-action="Delete" asp-route-id="@u.Id" method="post" class="d-inline"
+                                  onsubmit="return confirm('Delete this link and its stats?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function copyText(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const old = btn.textContent;
+                btn.textContent = "Copied!";
+                setTimeout(() => (btn.textContent = old), 1200);
+            });
+        }
+    </script>
+}

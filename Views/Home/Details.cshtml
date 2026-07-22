@@ -1,0 +1,125 @@
+@model UrlShortener.Models.StatsViewModel
+@{
+    ViewData["Title"] = "Link statistics";
+    var baseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var shortUrl = $"{baseUrl}/r/{Model.Url.Code}";
+}
+
+<a asp-action="Index" class="btn btn-sm btn-outline-secondary mb-3">&larr; Back</a>
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="h4 mb-1">Statistics</h1>
+        <a href="@shortUrl" class="fw-semibold">@shortUrl</a>
+        <div class="text-secondary small text-truncate" style="max-width: 620px;">→ @Model.Url.OriginalUrl</div>
+    </div>
+    <button class="btn btn-outline-secondary" onclick="copyText('@shortUrl', this)">Copy link</button>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card"><div class="stat-value">@Model.TotalClicks</div><div class="stat-label">Total clicks</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card"><div class="stat-value">@Model.DayCounts.Sum()</div><div class="stat-label">Last 14 days</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card"><div class="stat-value">@Model.TopReferrers.Count</div><div class="stat-label">Referrer sources</div></div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card"><div class="stat-value">@Model.Url.CreatedAt.ToLocalTime().ToString("MM-dd")</div><div class="stat-label">Created</div></div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h6 text-secondary mb-3">Clicks over the last 14 days</h2>
+        <div style="position: relative; height: 260px;">
+            <canvas id="clicksChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-7">
+        <h2 class="h6 mb-2">Recent clicks</h2>
+        @if (Model.RecentClicks.Count == 0)
+        {
+            <p class="text-secondary">No clicks yet. Open the short link to record one.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead><tr><th>When (local)</th><th>Referrer</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.RecentClicks)
+                        {
+                            <tr>
+                                <td class="small">@c.ClickedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td class="small text-secondary text-truncate" style="max-width:320px;">@(string.IsNullOrEmpty(c.Referrer) ? "Direct / unknown" : c.Referrer)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+    <div class="col-12 col-lg-5">
+        <h2 class="h6 mb-2">Top referrers</h2>
+        @if (Model.TopReferrers.Count == 0)
+        {
+            <p class="text-secondary">No data yet.</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var r in Model.TopReferrers)
+                {
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-truncate" style="max-width:260px;">@r.Referrer</span>
+                        <span class="badge bg-primary rounded-pill">@r.Count</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DayLabels));
+        const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DayCounts));
+        new Chart(document.getElementById('clicksChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Clicks',
+                    data: data,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37,99,235,.15)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: .35,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#2563eb'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+            }
+        });
+        function copyText(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                const old = btn.textContent; btn.textContent = "Copied!";
+                setTimeout(() => (btn.textContent = old), 1200);
+            });
+        }
+    </script>
+}
