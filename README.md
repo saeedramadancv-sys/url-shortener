@@ -6,6 +6,12 @@
 </p>
 
 <p align="center">
+  <a href="https://url-shortener-cc59.onrender.com/"><img src="https://img.shields.io/badge/🔗_Live_Demo-2563eb?style=for-the-badge" alt="Live Demo"/></a>
+</p>
+
+<p align="center"><sub>Hosted free on Render — the first request after idle may take ~30s to wake up.</sub></p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/ASP.NET%20Core-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core"/>
   <img src="https://img.shields.io/badge/EF%20Core-512BD4?style=flat-square" alt="EF Core"/>
   <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="SQL Server"/>
