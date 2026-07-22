@@ -3,6 +3,11 @@ using UrlShortener.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Cloud hosts (Render, Railway, …) provide the port to listen on via $PORT.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 builder.Services.AddControllersWithViews();
 
 // Choose the database provider. SQL Server is the default (per the project spec);

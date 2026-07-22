@@ -1,0 +1,15 @@
+# Render blueprint — deploys ShortLink as a Docker web service (free tier).
+# In Render: New + → Blueprint → connect this repo, or create a Web Service
+# manually and set the environment variables below.
+services:
+  - type: web
+    name: shortlink
+    runtime: docker
+    plan: free
+    envVars:
+      # Use SQLite so no external database is required (data is ephemeral on the
+      # free tier — it resets on redeploy, and the seeder repopulates demo data).
+      - key: UseSqlite
+        value: "true"
+      - key: Seed
+        value: "true"
