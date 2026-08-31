@@ -104,6 +104,52 @@ ShortUrl (Id, Code [unique], OriginalUrl, CreatedAt)
 
 ---
 
+## Engineering notes
+
+The interesting parts of this project aren't the CRUD — they're the decisions underneath it.
+
+### Short codes are generated securely, not conveniently
+
+The obvious way to generate a short code is `Random`. Two problems: `Random` is a
+pseudo-random generator seeded from the clock (codes become predictable, so anyone could
+enumerate other people's links), and codes get read off screens by hand, where `0/O` and
+`1/l/I` are genuinely hard to tell apart. So the generator uses
+`RandomNumberGenerator.GetBytes()` (cryptographically secure) over a **56-character
+alphabet with the ambiguous glyphs removed**:
+
+```csharp
+private const string Alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+```
+
+And because uniqueness is a *database* guarantee, not an application one, the `Code`
+column carries a unique index — the generator retries on collision rather than assuming
+it won't happen.
+
+### The database provider is a runtime decision, not a compile-time one
+
+`Program.cs` picks the EF Core provider from configuration, so it's SQL Server in
+production and SQLite for a zero-setup local run — with **no code changes**. Reviewing
+this repo does not require installing SQL Server.
+
+### Every write path is hardened
+
+| Risk | Mitigation |
+|---|---|
+| Cross-site request forgery | `[ValidateAntiForgeryToken]` on every POST action |
+| `javascript:` / `data:` URL injection | Server-side scheme allow-list — only `http` / `https` |
+| Malicious custom aliases | Regex-constrained to `^[A-Za-z0-9_-]{3,32}$` |
+| Alias squatting | Uniqueness checked before insert, unique index behind it |
+| Oversized `User-Agent` | Truncated to 400 characters before storage |
+
+### Async end to end, reproducible deploys
+
+Every database call uses the EF Core async APIs so request threads never block on I/O, and
+cascade delete is configured with the Fluent API. A multi-stage `Dockerfile` ships only the
+runtime image, `render.yaml` describes the service as Infrastructure-as-Code, and the app
+binds to the host's injected `$PORT` — the same image runs locally and in the cloud.
+
+---
+
 ## Project structure
 
 ```
@@ -120,4 +166,13 @@ UrlShortener/
 
 ---
 
-_Built as a portfolio project by Saeed Ramadan._
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+---
+
+**Saeed Adel Ramadan** — Junior .NET Developer, Amman, Jordan
+[GitHub](https://github.com/saeedramadancv-sys) · [LinkedIn](https://linkedin.com/in/saeed-ramadan-cv) · saeed.ramadan.cv@gmail.com
