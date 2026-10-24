@@ -114,7 +114,7 @@ The obvious way to generate a short code is `Random`. Two problems: `Random` is 
 pseudo-random generator seeded from the clock (codes become predictable, so anyone could
 enumerate other people's links), and codes get read off screens by hand, where `0/O` and
 `1/l/I` are genuinely hard to tell apart. So the generator uses
-`RandomNumberGenerator.GetBytes()` (cryptographically secure) over a **56-character
+`RandomNumberGenerator.GetBytes()` (cryptographically secure) over a **57-character
 alphabet with the ambiguous glyphs removed**:
 
 ```csharp
@@ -127,8 +127,9 @@ it won't happen.
 
 ### The database provider is a runtime decision, not a compile-time one
 
-`Program.cs` picks the EF Core provider from configuration, so it's SQL Server in
-production and SQLite for a zero-setup local run — with **no code changes**. Reviewing
+`Program.cs` picks the EF Core provider from configuration, so it's SQL Server by
+default and SQLite with one setting — with **no code changes**. The live demo on Render
+runs on SQLite (`UseSqlite=true` in `render.yaml`), so it needs no external database. Reviewing
 this repo does not require installing SQL Server.
 
 ### Every write path is hardened
@@ -175,4 +176,4 @@ MIT — see [LICENSE](LICENSE).
 ---
 
 **Saeed Adel Ramadan** — Junior .NET Developer, Amman, Jordan
-[GitHub](https://github.com/saeedramadancv-sys) · [LinkedIn](https://linkedin.com/in/saeed-ramadan-cv) · saeed.ramadan.cv@gmail.com
+[GitHub](https://github.com/saeedramadancv-sys) · [LinkedIn](https://www.linkedin.com/in/saeedramadan-dotnet) · saeed.ramadan.cv@gmail.com
