@@ -59,10 +59,37 @@ public class HomeController : Controller
             code = await GenerateUniqueCodeAsync();
         }
 
-        _db.ShortUrls.Add(new ShortUrl { Code = code, OriginalUrl = originalUrl });
-        await _db.SaveChangesAsync();
+        var link = new ShortUrl { Code = code, OriginalUrl = originalUrl };
+        for (var attempt = 1; ; attempt++)
+        {
+            _db.ShortUrls.Add(link);
+            try
+            {
+                await _db.SaveChangesAsync();
+                break;
+            }
+            catch (DbUpdateException)
+            {
+                // The AnyAsync checks above can't see a request that saves the same code a
+                // moment later; the unique index on Code is what actually stops the duplicate.
+                // Turn that into a normal answer instead of an error page.
+                _db.Entry(link).State = EntityState.Detached;
+                if (!await _db.ShortUrls.AnyAsync(u => u.Code == link.Code))
+                    throw;
 
-        TempData["NewCode"] = code;
+                if (!string.IsNullOrWhiteSpace(customAlias) || attempt == 3)
+                {
+                    TempData["Error"] = string.IsNullOrWhiteSpace(customAlias)
+                        ? "Could not create a short link, please try again."
+                        : $"The alias '{customAlias}' is already taken.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                link.Code = await GenerateUniqueCodeAsync();
+            }
+        }
+
+        TempData["NewCode"] = link.Code;
         return RedirectToAction(nameof(Index));
     }
 
@@ -156,12 +183,8 @@ public class HomeController : Controller
         }
     }
 
-    private static string RandomCode(int length)
-    {
-        var bytes = RandomNumberGenerator.GetBytes(length);
-        var chars = new char[length];
-        for (int i = 0; i < length; i++)
-            chars[i] = Alphabet[bytes[i] % Alphabet.Length];
-        return new string(chars);
-    }
+    // GetItems picks each character uniformly. Taking a random byte modulo 57 did not:
+    // 256 isn't a multiple of 57, so the first 28 characters came up more often.
+    private static string RandomCode(int length) =>
+        new(RandomNumberGenerator.GetItems<char>(Alphabet, length));
 }
