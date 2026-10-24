@@ -136,6 +136,8 @@ The generator keeps trying until it finds a code that isn't used yet, and the `C
 
 Every database call uses EF Core's async methods, so requests don't block a thread while waiting on the database. Cascade delete is set up with the Fluent API. A multi-stage `Dockerfile` ships only the runtime image, `render.yaml` describes the Render service, and the app listens on the `$PORT` the host gives it, so the same image runs locally and in the cloud.
 
+`GET /health` returns `Healthy` (200) or `Unhealthy` (503). It runs a real query against the `ShortUrls` table, so a missing database or table shows up as unhealthy even while the web server itself is still answering. An uptime monitor checks this URL.
+
 ---
 
 ## Project structure
@@ -151,7 +153,7 @@ url-shortener/
 ├── Dockerfile                      # multi-stage build
 ├── render.yaml                     # Render service definition
 ├── appsettings.json                # connection strings + provider switch
-└── Program.cs                      # DI, provider selection, routing
+└── Program.cs                      # DI, provider selection, routing, /health
 ```
 
 ---

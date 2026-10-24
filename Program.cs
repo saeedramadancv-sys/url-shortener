@@ -22,6 +22,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer"));
 });
 
+// /health runs a real query, so it fails when the database or its tables are gone,
+// not only when the process is down. AnyAsync alone would read an empty table as
+// unhealthy, hence the explicit true.
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>(customTestQuery: async (db, ct) =>
+    {
+        await db.ShortUrls.AnyAsync(ct);
+        return true;
+    });
+
 var app = builder.Build();
 
 // Create the database/schema on first run.
@@ -40,6 +50,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+
+// Plain-text "Healthy" with 200, or "Unhealthy" with 503. Used by the uptime monitor.
+app.MapHealthChecks("/health");
 
 // Redirect route for short links: /r/{code}
 app.MapControllerRoute(
