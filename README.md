@@ -1,47 +1,48 @@
-<h1 align="center">🔗 ShortLink — URL Shortener with Click Analytics</h1>
+<h1 align="center">ShortLink: a URL shortener with click stats</h1>
 
 <p align="center">
-  A full-stack URL shortener built with <b>ASP.NET Core MVC</b>, <b>Entity Framework Core</b>, and <b>SQL Server</b>.<br/>
-  Shorten a link, share it, and track every click — with a per-link analytics dashboard.
+  A full-stack URL shortener built with <b>ASP.NET Core MVC</b> and <b>Entity Framework Core</b>.<br/>
+  Shorten a link, share it, and see how many people clicked it, when, and from where.
 </p>
 
 <p align="center">
-  <a href="https://url-shortener-cc59.onrender.com/"><img src="https://img.shields.io/badge/🔗_Live_Demo-2563eb?style=for-the-badge" alt="Live Demo"/></a>
+  <a href="https://url-shortener-cc59.onrender.com/"><img src="https://img.shields.io/badge/Live_Demo-2563eb?style=for-the-badge" alt="Live Demo"/></a>
 </p>
 
-<p align="center"><sub>Hosted free on Render — the first request after idle may take ~30s to wake up.</sub></p>
+<p align="center"><sub>Hosted on Render's free tier, so the first request after a quiet period can take up to a minute.</sub></p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/ASP.NET%20Core-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt="ASP.NET Core"/>
   <img src="https://img.shields.io/badge/EF%20Core-512BD4?style=flat-square" alt="EF Core"/>
-  <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square&logo=microsoftsqlserver&logoColor=white" alt="SQL Server"/>
-  <img src="https://img.shields.io/badge/C%23-239120?style=flat-square&logo=csharp&logoColor=white" alt="C#"/>
+  <img src="https://img.shields.io/badge/SQL%20Server-CC2927?style=flat-square" alt="SQL Server"/>
+  <img src="https://img.shields.io/badge/SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite"/>
+  <img src="https://img.shields.io/badge/C%23-239120?style=flat-square" alt="C#"/>
   <img src="https://img.shields.io/badge/Bootstrap-7952B3?style=flat-square&logo=bootstrap&logoColor=white" alt="Bootstrap"/>
 </p>
 
 ---
 
-## Features
+## What it does
 
-- **Shorten any URL** with an auto-generated code, or a **custom alias**.
-- **Click tracking** — every visit records a timestamp, referrer, and user agent.
-- **Analytics dashboard per link** — total clicks, a 14-day clicks chart (Chart.js), recent clicks, and top referrers.
-- **Copy-to-clipboard**, delete, and a live list of all your links with click counts.
-- **Server-side validation** (valid http/https URLs, alias format and uniqueness) and **anti-forgery protection** on every form.
-- **Provider-agnostic data layer**: SQL Server by default, or SQLite for zero-setup local runs.
+- Shortens any http or https link, with a generated code or a custom alias you pick.
+- Records every click: the time, the referrer and the browser's user agent.
+- Gives each link its own stats page with total clicks, a 14-day chart (Chart.js), the latest clicks and the top referrers.
+- Lists all links with their click counts, with buttons to copy or delete each one.
+- Validates everything on the server (only http/https links, alias format, aliases that are already taken), and every form has anti-forgery protection.
+- Runs on SQL Server by default, or on SQLite with one setting if you don't want to install a database.
 
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/01-home.png" alt="Home — shorten a URL and list your links" width="90%"/>
-  <br/><em>Home — shorten a URL and see all your links with click counts</em>
+  <img src="docs/screenshots/01-home.png" alt="Home page: shorten a URL and see your links" width="90%"/>
+  <br/><em>Home page: shorten a URL and see all links with their click counts</em>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/02-stats.png" alt="Per-link analytics dashboard" width="90%"/>
-  <br/><em>Analytics — clicks over 14 days, recent clicks, and top referrers</em>
+  <img src="docs/screenshots/02-stats.png" alt="Stats page for one link" width="90%"/>
+  <br/><em>Stats for one link: clicks over 14 days, latest clicks and top referrers (sample data from the demo seeder)</em>
 </p>
 
 ---
@@ -60,28 +61,29 @@
 
 ## Getting started
 
-### Prerequisites
-- [.NET SDK 9](https://dotnet.microsoft.com/download)
-- SQL Server or SQL Server **LocalDB** (bundled with Visual Studio). *Not needed if you run with SQLite — see below.*
+You need the [.NET 9 SDK](https://dotnet.microsoft.com/download). For the default setup you also need SQL Server or SQL Server LocalDB (it comes with Visual Studio). You can skip that and use SQLite instead, see below.
 
 ### Run with SQL Server (default)
-The connection string is in `appsettings.json` (`ConnectionStrings:SqlServer`, defaults to LocalDB). Then:
+
+The connection string is in `appsettings.json` (`ConnectionStrings:SqlServer`, set to LocalDB by default). Then:
 
 ```bash
 dotnet run
 ```
 
-The database and tables are created automatically on first run. Open the URL shown in the console.
+The database and tables are created on the first run. Open the URL shown in the console.
 
 ### Run without SQL Server (SQLite)
-No database engine required — the app creates a local `urlshortener.db` file:
+
+No database server needed. The app creates a local `urlshortener.db` file:
 
 ```bash
 dotnet run --UseSqlite=true
 ```
 
 ### Load demo data (optional)
-Seed a few links and sample click history for a populated dashboard:
+
+This adds a few links and some made-up click history, so the stats pages aren't empty:
 
 ```bash
 dotnet run --UseSqlite=true --Seed=true
@@ -91,9 +93,9 @@ dotnet run --UseSqlite=true --Seed=true
 
 ## How it works
 
-1. **Create** — `POST /Home/Create` validates the URL, generates a unique 6-character code (or uses your alias), and stores a `ShortUrl` row.
-2. **Redirect** — `GET /r/{code}` looks up the code, records a `Click` (timestamp, referrer, user agent), then 302-redirects to the original URL.
-3. **Analytics** — `GET /Home/Details/{id}` aggregates the click history into a 14-day series, recent clicks, and top referrers.
+1. **Create:** `POST /Home/Create` checks the URL, generates a unique 6-character code (or uses your alias) and saves a `ShortUrl` row.
+2. **Redirect:** `GET /r/{code}` finds the code, saves a `Click` (time, referrer, user agent) and redirects (302) to the original URL.
+3. **Stats:** `GET /Home/Details/{id}` turns the click history into a 14-day series, the latest clicks and the top referrers.
 
 ### Data model
 
@@ -104,76 +106,61 @@ ShortUrl (Id, Code [unique], OriginalUrl, CreatedAt)
 
 ---
 
-## Engineering notes
+## A few decisions
 
-The interesting parts of this project aren't the CRUD — they're the decisions underneath it.
+### How short codes are generated
 
-### Short codes are generated securely, not conveniently
-
-The obvious way to generate a short code is `Random`. Two problems: `Random` is a
-pseudo-random generator seeded from the clock (codes become predictable, so anyone could
-enumerate other people's links), and codes get read off screens by hand, where `0/O` and
-`1/l/I` are genuinely hard to tell apart. So the generator uses
-`RandomNumberGenerator.GetBytes()` (cryptographically secure) over a **57-character
-alphabet with the ambiguous glyphs removed**:
+The easy way to make a short code is `Random`. I didn't use it for two reasons. `Random` is seeded from the clock, so codes can be predicted and someone could guess other people's links. And people read codes off screens, where `0` and `O`, or `1`, `l` and `I`, are hard to tell apart. So the generator uses `RandomNumberGenerator.GetBytes()`, which is cryptographically secure, over a 57-character alphabet with those look-alike characters taken out:
 
 ```csharp
 private const string Alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 ```
 
-And because uniqueness is a *database* guarantee, not an application one, the `Code`
-column carries a unique index — the generator retries on collision rather than assuming
-it won't happen.
+The generator keeps trying until it finds a code that isn't used yet, and the `Code` column has a unique index behind it, because the database is the only place that can really guarantee uniqueness.
 
-### The database provider is a runtime decision, not a compile-time one
+### The database is chosen at runtime
 
-`Program.cs` picks the EF Core provider from configuration, so it's SQL Server by
-default and SQLite with one setting — with **no code changes**. The live demo on Render
-runs on SQLite (`UseSqlite=true` in `render.yaml`), so it needs no external database. Reviewing
-this repo does not require installing SQL Server.
+`Program.cs` picks the EF Core provider from configuration: SQL Server by default, SQLite with one setting, and no code changes either way. The live demo on Render runs on SQLite (`UseSqlite=true` in `render.yaml`), so it doesn't need a separate database. It also means you don't need SQL Server installed to try this repo.
 
-### Every write path is hardened
+### Protecting the write paths
 
-| Risk | Mitigation |
+| Risk | What I did |
 |---|---|
 | Cross-site request forgery | `[ValidateAntiForgeryToken]` on every POST action |
-| `javascript:` / `data:` URL injection | Server-side scheme allow-list — only `http` / `https` |
-| Malicious custom aliases | Regex-constrained to `^[A-Za-z0-9_-]{3,32}$` |
-| Alias squatting | Uniqueness checked before insert, unique index behind it |
-| Oversized `User-Agent` | Truncated to 400 characters before storage |
+| `javascript:` / `data:` links | Only `http` and `https` are accepted, checked on the server |
+| Strange custom aliases | Aliases must match `^[A-Za-z0-9_-]{3,32}$` |
+| Taking someone else's alias | Checked before saving, with a unique index behind it |
+| Huge `User-Agent` headers | Cut to 400 characters before saving |
 
-### Async end to end, reproducible deploys
+### Async and deployment
 
-Every database call uses the EF Core async APIs so request threads never block on I/O, and
-cascade delete is configured with the Fluent API. A multi-stage `Dockerfile` ships only the
-runtime image, `render.yaml` describes the service as Infrastructure-as-Code, and the app
-binds to the host's injected `$PORT` — the same image runs locally and in the cloud.
+Every database call uses EF Core's async methods, so requests don't block a thread while waiting on the database. Cascade delete is set up with the Fluent API. A multi-stage `Dockerfile` ships only the runtime image, `render.yaml` describes the Render service, and the app listens on the `$PORT` the host gives it, so the same image runs locally and in the cloud.
 
 ---
 
 ## Project structure
 
 ```
-UrlShortener/
+url-shortener/
 ├── Controllers/HomeController.cs   # create, redirect, stats, delete
 ├── Data/AppDbContext.cs            # EF Core context + model config
-├── Data/DemoSeeder.cs             # optional demo data (runs only with --Seed=true)
+├── Data/DemoSeeder.cs              # optional demo data (runs only with --Seed=true)
 ├── Models/                         # ShortUrl, Click, StatsViewModel
-├── Views/Home/                     # Index (list + form), Details (analytics)
+├── Views/Home/                     # Index (list + form), Details (stats)
 ├── wwwroot/css/site.css            # custom styling
+├── Dockerfile                      # multi-stage build
+├── render.yaml                     # Render service definition
 ├── appsettings.json                # connection strings + provider switch
 └── Program.cs                      # DI, provider selection, routing
 ```
 
 ---
 
----
-
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
 
 ---
 
-**Saeed Adel Ramadan** — Junior .NET Developer, Amman, Jordan
+**Saeed Ramadan**, .NET backend developer, Amman, Jordan
 [GitHub](https://github.com/saeedramadancv-sys) · [LinkedIn](https://www.linkedin.com/in/saeedramadan-dotnet) · saeed.ramadan.cv@gmail.com
