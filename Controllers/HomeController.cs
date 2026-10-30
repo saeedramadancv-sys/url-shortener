@@ -11,17 +11,27 @@ public class HomeController : Controller
     // Ambiguous-looking characters (0/O, 1/l/I) are omitted on purpose.
     private const string Alphabet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private readonly AppDbContext _db;
+    private readonly bool _allowDelete;
 
-    public HomeController(AppDbContext db) => _db = db;
+    public HomeController(AppDbContext db, IConfiguration configuration)
+    {
+        _db = db;
+
+        // The public demo has no accounts, so anyone could delete its sample links. Seeded
+        // data means it's the demo, so delete is off there unless a setting says otherwise.
+        _allowDelete = configuration.GetValue("AllowDelete", !configuration.GetValue<bool>("Seed"));
+    }
 
     // GET / — list of links + the create form.
     public async Task<IActionResult> Index()
     {
+        // Clicks.Count here becomes a COUNT in SQL, so the page doesn't load every click.
         var links = await _db.ShortUrls
-            .Include(u => u.Clicks)
             .OrderByDescending(u => u.CreatedAt)
+            .Select(u => new LinkRow(u.Id, u.Code, u.OriginalUrl, u.CreatedAt, u.Clicks.Count))
             .ToListAsync();
 
+        ViewBag.AllowDelete = _allowDelete;
         return View(links);
     }
 
@@ -116,37 +126,45 @@ public class HomeController : Controller
     // GET /Home/Details/{id} — statistics for a single link.
     public async Task<IActionResult> Details(int id)
     {
-        var link = await _db.ShortUrls
-            .Include(u => u.Clicks)
-            .FirstOrDefaultAsync(u => u.Id == id);
+        var link = await _db.ShortUrls.FirstOrDefaultAsync(u => u.Id == id);
         if (link == null) return NotFound();
+
+        // All the grouping happens in SQL, so a link with a lot of clicks stays cheap to open.
+        var clicks = _db.Clicks.Where(c => c.ShortUrlId == id);
 
         // Clicks per day for the last 14 days.
         var today = DateTime.UtcNow.Date;
+        var firstDay = today.AddDays(-13);
+        var perDay = await clicks
+            .Where(c => c.ClickedAt >= firstDay)
+            .GroupBy(c => c.ClickedAt.Date)
+            .Select(g => new { Day = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Day, x => x.Count);
+
         var labels = new List<string>();
         var counts = new List<int>();
         for (int i = 13; i >= 0; i--)
         {
             var day = today.AddDays(-i);
             labels.Add(day.ToString("MM-dd"));
-            counts.Add(link.Clicks.Count(c => c.ClickedAt.Date == day));
+            counts.Add(perDay.GetValueOrDefault(day));
         }
 
-        var topReferrers = link.Clicks
+        var topReferrers = await clicks
             .GroupBy(c => string.IsNullOrEmpty(c.Referrer) ? "Direct / unknown" : c.Referrer!)
-            .Select(g => (Referrer: g.Key, Count: g.Count()))
+            .Select(g => new { Referrer = g.Key, Count = g.Count() })
             .OrderByDescending(x => x.Count)
             .Take(5)
-            .ToList();
+            .ToListAsync();
 
         var vm = new StatsViewModel
         {
             Url = link,
-            TotalClicks = link.Clicks.Count,
+            TotalClicks = await clicks.CountAsync(),
             DayLabels = labels,
             DayCounts = counts,
-            RecentClicks = link.Clicks.OrderByDescending(c => c.ClickedAt).Take(10).ToList(),
-            TopReferrers = topReferrers
+            RecentClicks = await clicks.OrderByDescending(c => c.ClickedAt).Take(10).ToListAsync(),
+            TopReferrers = topReferrers.Select(x => (x.Referrer, x.Count)).ToList()
         };
         return View(vm);
     }
@@ -156,6 +174,12 @@ public class HomeController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
+        if (!_allowDelete)
+        {
+            TempData["Error"] = "Deleting links is turned off on this demo.";
+            return RedirectToAction(nameof(Index));
+        }
+
         var link = await _db.ShortUrls.FindAsync(id);
         if (link != null)
         {

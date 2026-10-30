@@ -12,14 +12,14 @@ builder.Services.AddControllersWithViews();
 
 // Choose the database provider. SQL Server is the default (per the project spec);
 // set "UseSqlite": true in appsettings to run with zero setup (no SQL Server needed).
-var useSqlite = builder.Configuration.GetValue<bool>("UseSqlite");
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<AppDbContext>((services, options) =>
 {
-    if (useSqlite)
-        options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")
+    var configuration = services.GetRequiredService<IConfiguration>();
+    if (configuration.GetValue<bool>("UseSqlite"))
+        options.UseSqlite(configuration.GetConnectionString("Sqlite")
                           ?? "Data Source=urlshortener.db");
     else
-        options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServer"));
+        options.UseSqlServer(configuration.GetConnectionString("SqlServer"));
 });
 
 // /health runs a real query, so it fails when the database or its tables are gone,
@@ -65,3 +65,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+
+// Lets the integration tests boot the real app with WebApplicationFactory<Program>.
+public partial class Program { }

@@ -7,6 +7,7 @@
 
 <p align="center">
   <a href="https://url-shortener-cc59.onrender.com/"><img src="https://img.shields.io/badge/Live_Demo-2563eb?style=for-the-badge" alt="Live Demo"/></a>
+  <a href="https://github.com/saeedramadancv-sys/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/saeedramadancv-sys/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
 </p>
 
 <p align="center"><sub>Hosted on Render's free tier, so the first request after a quiet period can take up to a minute.</sub></p>
@@ -88,6 +89,16 @@ This adds a few links and some made-up click history, so the stats pages aren't 
 ```bash
 dotnet run --UseSqlite=true --Seed=true
 ```
+
+The public demo runs with demo data, so deleting links is turned off there, since it has no accounts. Set `AllowDelete=true` to change that.
+
+### Tests
+
+```bash
+dotnet test tests/UrlShortener.Tests
+```
+
+11 integration tests boot the real app on an in-memory SQLite database. They cover redirects and click recording, URL and alias rules, CSRF protection, the stats page and `/health`.
 
 ---
 

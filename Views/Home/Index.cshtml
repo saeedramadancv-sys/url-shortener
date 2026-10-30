@@ -1,4 +1,4 @@
-@model List<UrlShortener.Models.ShortUrl>
+@model List<UrlShortener.Models.LinkRow>
 @{
     ViewData["Title"] = "Shorten a URL";
     var baseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
@@ -72,16 +72,19 @@ else
                         <td class="text-truncate" style="max-width: 320px;">
                             <a href="@u.OriginalUrl" class="text-secondary" target="_blank" rel="noopener">@u.OriginalUrl</a>
                         </td>
-                        <td class="text-center"><span class="badge bg-info-subtle text-info-emphasis">@u.Clicks.Count</span></td>
+                        <td class="text-center"><span class="badge bg-info-subtle text-info-emphasis">@u.ClickCount</span></td>
                         <td class="text-secondary small">@u.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                         <td class="text-end text-nowrap">
                             <button class="btn btn-sm btn-outline-secondary" onclick="copyText('@shortUrl', this)">Copy</button>
                             <a asp-action="Details" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Stats</a>
-                            <form asp-action="Delete" asp-route-id="@u.Id" method="post" class="d-inline"
-                                  onsubmit="return confirm('Delete this link and its stats?');">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                            </form>
+                            @if (ViewBag.AllowDelete == true)
+                            {
+                                <form asp-action="Delete" asp-route-id="@u.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this link and its stats?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            }
                         </td>
                     </tr>
                 }
