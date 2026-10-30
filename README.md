@@ -10,6 +10,8 @@
   <a href="https://github.com/saeedramadancv-sys/url-shortener/actions/workflows/ci.yml"><img src="https://github.com/saeedramadancv-sys/url-shortener/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
 </p>
 
+<p align="center"><i>My training project during my internship at Tuned Applications (Nov 2025 to Apr 2026), published here in July 2026.</i></p>
+
 <p align="center"><sub>Hosted on Render's free tier, so the first request after a quiet period can take up to a minute.</sub></p>
 
 <p align="center">
